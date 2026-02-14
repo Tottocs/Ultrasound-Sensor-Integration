@@ -1,4 +1,4 @@
-#define FIRMWARE_VERSION "v.0.3" // Adding buzzer implementation
+#define FIRMWARE_VERSION "v.1.0"
 
 /*
 This code uses an ultrasonic sensor to output receice a distance measurement.
@@ -7,7 +7,8 @@ It then uses that measurement to move a servo from 0 to 90 degrees.
 Anything below or above the limits will correspond to 0 and 90 degrees respectively.
 
 The second integration is with a buzzer which changes the tone depending on the 
-distance. This range can be changed, but initially it is from 2000 to 8000 Hz.
+distance. This range can be changed, but initially it is from 2000 to 6000 Hz.
+If there is not object in sight the buzzer will remain silent.
 
 The acronym US refers to "Ultrasonic" 
 */
@@ -16,13 +17,13 @@ The acronym US refers to "Ultrasonic"
 #include <Servo.h>
 
 #define UART_BAUDRATE 9600
-#define US_REFRESH_RATE 500 //Refresh rate in ms
+#define US_REFRESH_RATE 200 //Refresh rate in ms
 
 //Pins on Arduino UNO 
-#define US_TRIG_PIN 8 
-#define US_ECHO_PIN 9 
+#define US_TRIG_PIN 7 
+#define US_ECHO_PIN 2 
 
-#define PWM_SERVO_PIN 6
+#define PWM_SERVO_PIN 3
 
 #define PWM_BUZZER_PIN 10
 
@@ -32,58 +33,70 @@ The acronym US refers to "Ultrasonic"
 
 //MAX and MIN frequencies (Hz)
 #define MIN_FREQ 2000
-#define MAX_FREQ 8000
+#define MAX_FREQ 6000
 
 //Creating Servo object
 Servo clanker;
 
 //Initialising variables
-int Distance;
+unsigned long Distance;
 int ServoPos;
 int BuzzerFreq;
 
 void setup() {
   Serial.begin(UART_BAUDRATE);
+
   //Pin setup
-  US_Pin_Setup(US_TRIG_PIN, US_ECHO_PIN); //Setting up pins for US sensor
+  US_Setup(US_TRIG_PIN, US_ECHO_PIN); //Setting up pins for US sensor
+  //Serial.println(digitalPinToInterrupt(US_ECHO_PIN));
   clanker.attach(PWM_SERVO_PIN);
   pinMode(PWM_BUZZER_PIN, OUTPUT);
 }
 
 void loop() {
   //Receiving a distance measurement from ultrasonic sensor
-  Distance = Get_Distance_CM(US_TRIG_PIN, US_ECHO_PIN);
+  Distance = Get_Distance_CM();
+  //Dist=DistDouble;
+  //Dist = (DistDouble) /2;
 
   //Implementation of servo and buzzer
   if (Distance >= MIN_DIST && Distance <= MAX_DIST){ // Between min and max distances
     ServoPos = (Distance-MIN_DIST)/2;
     BuzzerFreq = map(Distance, MIN_DIST, MAX_DIST, MIN_FREQ, MAX_FREQ);
+
+    //Setting buzzer frequency
+    tone(PWM_BUZZER_PIN, BuzzerFreq);
   }
   else if (Distance > MAX_DIST){ // Above max distance
     ServoPos = (MAX_DIST-MIN_DIST)/2;
-    BuzzerFreq = MAX_FREQ;
+    noTone(PWM_BUZZER_PIN);
   }
   else { // Below min distance or else
     ServoPos = 0;
     BuzzerFreq = MIN_FREQ;
+
+    //Setting buzzer frequency
+    tone(PWM_BUZZER_PIN, BuzzerFreq);
   }
   
   //Setting servo position
   clanker.write(ServoPos);
 
-  //Setting buzzer frequency
-  tone(PWM_BUZZER_PIN, BuzzerFreq);
-
   //Printing information to serial monitor
+
   Serial.print("Distance:");
   Serial.print(Distance);
   Serial.print("cm\n\r");
+  //Serial.print(Dist);
+  //Serial.print("cm\n\r");
+  /*
   Serial.print("Servo Position:");
   Serial.print(ServoPos);
   Serial.print(" degrees\n\r");
-  Serial.print("Buzzer frequency:");  
+  Serial.print("Buzzer frequency:");
   Serial.print(BuzzerFreq);
   Serial.print("Hz\n\r\n");
+*/
   //Refresh rate of the circuit
   delay(US_REFRESH_RATE);
 }

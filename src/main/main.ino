@@ -35,7 +35,7 @@ The acronym US refers to "Ultrasonic"
 #define MIN_FREQ 2000
 #define MAX_FREQ 6000
 
-//Creating Servo object
+//Creating Servo object (with funny name)
 Servo clanker;
 
 //Initialising variables

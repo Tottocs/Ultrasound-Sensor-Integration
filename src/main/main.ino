@@ -1,7 +1,7 @@
 #define FIRMWARE_VERSION "v.1.0"
 
 /*
-This code uses an ultrasonic sensor to output receice a distance measurement.
+This code uses an ultrasonic sensor to receive a distance measurement.
 It then uses that measurement to move a servo from 0 to 90 degrees.
 0 degrees corresponds to 15 cm and 90 degrees corresponds to 195 cm.
 Anything below or above the limits will correspond to 0 and 90 degrees respectively.

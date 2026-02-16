@@ -59,8 +59,7 @@ void US_Setup(int TrigPin, int EchoPin){
 unsigned long Get_Distance_CM(void){
   //Setting variables
   unsigned long Distance;
-
-  EchoComplete = false;
+  bool EchoComplete = false;
 
   //Sending trig pulse
   digitalWrite(_TrigPin, LOW);

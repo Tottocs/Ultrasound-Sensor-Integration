@@ -17,7 +17,7 @@ The acronym US refers to "Ultrasonic"
 #include <Servo.h>
 
 #define UART_BAUDRATE 9600
-#define US_REFRESH_RATE 200 //Refresh rate in ms
+#define US_REFRESH_RATE 400 //Refresh rate in ms
 
 //Pins on Arduino UNO 
 #define US_TRIG_PIN 7 
@@ -35,8 +35,9 @@ The acronym US refers to "Ultrasonic"
 #define MIN_FREQ 2000
 #define MAX_FREQ 6000
 
-//Creating Servo object (with funny name)
+//Creating objects (with funny name)
 Servo clanker;
+US_Sensor spook(US_TRIG_PIN);
 
 //Initialising variables
 unsigned long Distance;
@@ -47,17 +48,14 @@ void setup() {
   Serial.begin(UART_BAUDRATE);
 
   //Pin setup
-  US_Setup(US_TRIG_PIN, US_ECHO_PIN); //Setting up pins for US sensor
-  //Serial.println(digitalPinToInterrupt(US_ECHO_PIN));
+  spook.Setup_Echo_Pin(US_ECHO_PIN); //Setting up shared Echo pin for US sensors
   clanker.attach(PWM_SERVO_PIN);
   pinMode(PWM_BUZZER_PIN, OUTPUT);
 }
 
 void loop() {
   //Receiving a distance measurement from ultrasonic sensor
-  Distance = Get_Distance_CM();
-  //Dist=DistDouble;
-  //Dist = (DistDouble) /2;
+  Distance = spook.Get_Distance_CM();
 
   //Implementation of servo and buzzer
   if (Distance >= MIN_DIST && Distance <= MAX_DIST){ // Between min and max distances
@@ -83,12 +81,10 @@ void loop() {
   clanker.write(ServoPos);
 
   //Printing information to serial monitor
-
   Serial.print("Distance:");
   Serial.print(Distance);
   Serial.print("cm\n\r");
-  //Serial.print(Dist);
-  //Serial.print("cm\n\r");
+  
   /*
   Serial.print("Servo Position:");
   Serial.print(ServoPos);

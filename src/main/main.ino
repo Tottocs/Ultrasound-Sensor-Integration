@@ -1,4 +1,4 @@
-#define FIRMWARE_VERSION "v.1.0"
+#define FIRMWARE_VERSION "v.2.0"
 
 /*
 This code uses an ultrasonic sensor to receive a distance measurement.

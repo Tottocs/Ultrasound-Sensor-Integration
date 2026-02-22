@@ -10,56 +10,62 @@ as well as an output pin number, corresponding to the echo pin.
 
 #include "headers\ultrasonic-sensor.h"
 #include <Arduino.h>
-#include <stdint.h>
 
 //Defining constants
 #define WRITE_DELAY 5
 #define TRIG_PULSE_LENGTH 10 //Specified in datasheet
 #define HALF_SPD_SOUND 171
 #define MAG_SHIFT 10000
+#define PULSE_TIMEOUT 30000UL //Timeout in us. Max recordable distance ~400 cm
 
-#define PULSE_IN_TIMEOUT 20UL //Max recordable distance 350 cm
+US_Sensor* US_Sensor::ActiveSensor = nullptr;
+int US_Sensor::_EchoPin = 0;
 
-//Internal pin numbers
-static int _TrigPin;
-static int _EchoPin;
+//Setup
+US_Sensor::US_Sensor(int TrigPin){
+  //Setting pins
+  _TrigPin = TrigPin;
+  pinMode(_TrigPin, OUTPUT);
+}
 
-//Ultrasonic sensor variables
-volatile unsigned long EchoStart = 0;
-volatile unsigned long EchoDuration = 0;
-volatile bool EchoComplete = false;
+bool US_Sensor::Setup_Echo_Pin(int EchoPin){
+  _EchoPin = EchoPin;
+  pinMode(_EchoPin, INPUT);
+  int PinCheck = digitalPinToInterrupt(_EchoPin);
+  //Interrupt pin
+  if (PinCheck != NOT_AN_INTERRUPT){ // Checking if EchoPin is vaolid
+    attachInterrupt(digitalPinToInterrupt(_EchoPin), Echo_ISR, CHANGE);
+    return 1;
+  }
+  return 0;
+}
 
-//Internal interrupt function
-void Echo_ISR() {
+//Internal interrupt functions
+void US_Sensor::Echo_ISR(void) //Call interrupt with active sensor
+{
+    if (ActiveSensor)
+        (*ActiveSensor).Handle_Interrupt();
+}
+
+void US_Sensor::Handle_Interrupt(void) {
   //Serial.println("ISR");
   //Checks for High input
-  if (digitalRead(_EchoPin) == HIGH) {
+  if (digitalRead(_EchoPin)) { // Same as ==HIGH
     EchoStart = micros();
-  } else {
+  } 
+  else { //If LOW set duration to the difference in time
     EchoDuration = micros() - EchoStart;
     EchoComplete = true;
   }
 }
 
-//Callable functions
-
-//Setup
-void US_Setup(int TrigPin, int EchoPin){
-  //Setting pins
-  _TrigPin = TrigPin;
-  _EchoPin = EchoPin;
-
-  pinMode(_EchoPin, INPUT);
-  pinMode(_TrigPin, OUTPUT);
-  
-  //Interrupt pin
-  attachInterrupt(digitalPinToInterrupt(_EchoPin), Echo_ISR, CHANGE);
-}
-
-unsigned long Get_Distance_CM(void){
+//Getting distance function
+unsigned long US_Sensor::Get_Distance_CM(void){
   //Setting variables
   unsigned long Distance;
-  bool EchoComplete = false;
+  unsigned long SendTime;
+  ActiveSensor = this; //ARM this sensor
+  EchoComplete = false; 
 
   //Sending trig pulse
   digitalWrite(_TrigPin, LOW);
@@ -68,13 +74,15 @@ unsigned long Get_Distance_CM(void){
   delayMicroseconds(TRIG_PULSE_LENGTH);
   digitalWrite(_TrigPin, LOW);
 
-  /*
-  unsigned long timeout = millis();
-  while (!EchoComplete) {
-      if (millis() - timeout > PULSE_IN_TIMEOUT)
-          return -1;
+  //Wait for echo 
+  SendTime = micros();
+  while (!EchoComplete){
+    if (micros() - SendTime>= PULSE_TIMEOUT){
+      //Out of range. Use timeout as echo pulse
+      EchoComplete = true;
+      return 0;
+    }
   }
-  */
 
   //Converting echo pulse duration to cm
   Distance = (EchoDuration*HALF_SPD_SOUND)/MAG_SHIFT;

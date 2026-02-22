@@ -1,4 +1,4 @@
-#define FIRMWARE_VERSION "v.1.0"
+#define FIRMWARE_VERSION "v.2.0"
 
 /* 
 The function, Get_Distance, uses the HCSR04 ultrasonic sensor to output a distance measurement.

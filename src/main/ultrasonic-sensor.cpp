@@ -1,11 +1,12 @@
-#define FIRMWARE_VERSION "v.2.0"
+#define FIRMWARE_VERSION "v.2.1"
 
 /* 
 The function, Get_Distance, uses the HCSR04 ultrasonic sensor to output a distance measurement.
 It outputs a integer of units in cm. 
 
-The function, US_Pin_Setup, requires an input pin number, corresponding to the trig pin,
-as well as an output pin number, corresponding to the echo pin.
+To create an object of US_Sensor one must provide a trigger pin number.
+The function, Setup_Echo_Pin, requires an input pin number corresponding to the echo pin.
+After that, <object>.Get_Distance_CM() can be used to return the distance as an unsigned long in cm.
 */
 
 #include "headers\ultrasonic-sensor.h"
